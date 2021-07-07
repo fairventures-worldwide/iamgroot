@@ -185,7 +185,7 @@ public class MainActivity extends AppCompatActivity {
                 tv.setText("Diameter: "+Math.round(intValue)+" - Elapsed Time in ms: "+(end-start)/1000000);
 
 
-                Log.d(TAG, "DIAMETER" +  diameter + "/n Elapsed Time in Nano sec : "+(end - start) + "/n Elapsed Time in millisec: "+(end-start)/1000000);
+                Log.d(TAG, "DIAMETER " +  diameter + "/n Elapsed Time in Nano sec : "+(end - start) + "/n Elapsed Time in millisec: "+(end-start)/1000000);
 
             } catch (FileNotFoundException e) {
                 e.printStackTrace();

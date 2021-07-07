@@ -19,8 +19,8 @@ add_library( lib_opencv SHARED IMPORTED )
 set_target_properties(lib_opencv PROPERTIES IMPORTED_LOCATION ${OpenCV_DIR}/libs/${ANDROID_ABI}/libopencv_java4.so)
 
 
-#include_directories(${PATH_TO_STORMY})
-#file(GLOB CPP_FILES "*.cpp")
+include_directories(${PATH_TO_STORMY})
+file(GLOB CPP_FILES "*.cpp")
 
 add_library( # Sets the name of the library.
              native-lib
