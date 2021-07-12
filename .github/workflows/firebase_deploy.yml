@@ -12,6 +12,11 @@ jobs:
     steps:
       - uses: actions/checkout@v1
 
+      - name: Load OpenCV
+        uses: Dovyski/setup-opencv-action@v1
+        with:
+          opencv-version: '4.5.2'
+
       - name: set up JDK 1.8
         uses: actions/setup-java@v1
         with:
