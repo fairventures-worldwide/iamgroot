@@ -43,7 +43,6 @@ class CameraActivity : AppCompatActivity() {
         setContentView(R.layout.activity_camera)
 
 
-        // Request camera permissions
         if (allPermissionsGranted()) {
             startCamera()
         } else {
@@ -52,7 +51,6 @@ class CameraActivity : AppCompatActivity() {
             )
         }
 
-        // Set up the listener for take photo button
         camera_capture_button.setOnClickListener { takePhoto() }
 
         outputDirectory = getOutputDirectory()
