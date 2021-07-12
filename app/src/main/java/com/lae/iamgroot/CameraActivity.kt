@@ -1,14 +1,15 @@
 package com.lae.iamgroot
 
 import android.Manifest
-import android.app.Activity
-import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.AssetManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
@@ -16,12 +17,16 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.MutableLiveData
 import kotlinx.android.synthetic.main.activity_camera.*
+import org.opencv.android.Utils
+import org.opencv.core.Mat
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import kotlin.math.roundToInt
 
 typealias LumaListener = (luma: Double) -> Unit
 
@@ -30,6 +35,8 @@ class CameraActivity : AppCompatActivity() {
 
     private lateinit var outputDirectory: File
     private lateinit var cameraExecutor: ExecutorService
+
+    private var diameterData = MutableLiveData<Int>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,7 +48,8 @@ class CameraActivity : AppCompatActivity() {
             startCamera()
         } else {
             ActivityCompat.requestPermissions(
-                    this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
+                this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS
+            )
         }
 
         // Set up the listener for take photo button
@@ -51,6 +59,10 @@ class CameraActivity : AppCompatActivity() {
 
         cameraExecutor = Executors.newSingleThreadExecutor()
 
+        diameterData.observe(this, androidx.lifecycle.Observer {
+            Toast.makeText(this, "Diameter: $it", Toast.LENGTH_LONG).show()
+        })
+
     }
 
     private fun takePhoto() {
@@ -59,9 +71,11 @@ class CameraActivity : AppCompatActivity() {
 
         // Create time-stamped output file to hold the image
         val photoFile = File(
-                outputDirectory,
-                SimpleDateFormat(FILENAME_FORMAT, Locale.US
-                ).format(System.currentTimeMillis()) + ".jpg")
+            outputDirectory,
+            SimpleDateFormat(
+                FILENAME_FORMAT, Locale.US
+            ).format(System.currentTimeMillis()) + ".jpg"
+        )
 
         // Create output options object which contains file + metadata
         val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
@@ -69,25 +83,27 @@ class CameraActivity : AppCompatActivity() {
         // Set up image capture listener, which is triggered after photo has
         // been taken
         imageCapture.takePicture(
-                outputOptions, ContextCompat.getMainExecutor(this), object : ImageCapture.OnImageSavedCallback {
-            override fun onError(exc: ImageCaptureException) {
-                Log.e(TAG, "Photo capture failed: ${exc.message}", exc)
-            }
+            outputOptions,
+            ContextCompat.getMainExecutor(this),
+            object : ImageCapture.OnImageSavedCallback {
+                override fun onError(exc: ImageCaptureException) {
+                    Log.e(TAG, "Photo capture failed: ${exc.message}", exc)
+                }
 
-            override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                val savedUri = Uri.fromFile(photoFile)
-                val msg = "Photo capture succeeded: $savedUri"
-                Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
-                Log.d(TAG, msg)
+                override fun onImageSaved(output: ImageCapture.OutputFileResults) {
+                    val savedUri = Uri.fromFile(photoFile)
+                    processImage(savedUri)
 
-                val intent = Intent()
-                intent.putExtra("imgUri", savedUri.toString())
-                setResult(Activity.RESULT_OK, intent)
-                finish()
+//                    Log.d(TAG, msg)
+
+//                    val intent = Intent()
+//                    intent.putExtra("imgUri", savedUri.toString())
+//                    setResult(Activity.RESULT_OK, intent)
+//                    finish()
 
 
-            }
-        })
+                }
+            })
     }
 
     private fun startCamera() {
@@ -99,13 +115,13 @@ class CameraActivity : AppCompatActivity() {
 
             // Preview
             val preview = Preview.Builder()
-                    .build()
-                    .also {
-                        it.setSurfaceProvider(viewFinder.createSurfaceProvider())
-                    }
+                .build()
+                .also {
+                    it.setSurfaceProvider(viewFinder.createSurfaceProvider())
+                }
 
             imageCapture = ImageCapture.Builder()
-                    .build()
+                .build()
 
 
             // Select back camera as a default
@@ -117,9 +133,10 @@ class CameraActivity : AppCompatActivity() {
 
                 // Bind use cases to camera
                 cameraProvider.bindToLifecycle(
-                        this, cameraSelector, preview, imageCapture)
+                    this, cameraSelector, preview, imageCapture
+                )
 
-            } catch(exc: Exception) {
+            } catch (exc: Exception) {
                 Log.e(TAG, "Use case binding failed", exc)
             }
 
@@ -128,12 +145,14 @@ class CameraActivity : AppCompatActivity() {
 
     private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
         ContextCompat.checkSelfPermission(
-                baseContext, it) == PackageManager.PERMISSION_GRANTED
+            baseContext, it
+        ) == PackageManager.PERMISSION_GRANTED
     }
 
     private fun getOutputDirectory(): File {
         val mediaDir = externalMediaDirs.firstOrNull()?.let {
-            File(it, resources.getString(R.string.app_name)).apply { mkdirs() } }
+            File(it, resources.getString(R.string.app_name)).apply { mkdirs() }
+        }
         return if (mediaDir != null && mediaDir.exists())
             mediaDir else filesDir
     }
@@ -151,18 +170,50 @@ class CameraActivity : AppCompatActivity() {
     }
 
     override fun onRequestPermissionsResult(
-            requestCode: Int, permissions: Array<String>, grantResults:
-            IntArray) {
+        requestCode: Int, permissions: Array<String>, grantResults:
+        IntArray
+    ) {
         if (requestCode == REQUEST_CODE_PERMISSIONS) {
             if (allPermissionsGranted()) {
                 startCamera()
             } else {
-                Toast.makeText(this,
-                        "Permissions not granted by the user.",
-                        Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this,
+                    "Permissions not granted by the user.",
+                    Toast.LENGTH_SHORT
+                ).show()
                 finish()
             }
         }
     }
+
+    private fun processImage(uri: Uri) {
+        try {
+            val imageStream = contentResolver.openInputStream(uri)
+            val selectedImage = BitmapFactory.decodeStream(imageStream)
+            val bitmapImg = selectedImage.copy(Bitmap.Config.ARGB_8888, true)
+            val src = Mat()
+
+            Utils.bitmapToMat(bitmapImg, src)
+
+            val start = System.nanoTime()
+            val diameter: Double = getTreeDiameter(src.nativeObjAddr)
+            val end = System.nanoTime()
+            val intValue = diameter.roundToInt()
+
+            val time = (end - start) / 1000000
+
+            diameterData.postValue(intValue)
+
+        } catch (e: Exception) {
+            Log.e("fileError", e.stackTraceToString())
+        }
+    }
+
+    fun getAssetManager(): AssetManager? {
+        return assets
+    }
+
+    private external fun getTreeDiameter(mat: Long): Double
 
 }
