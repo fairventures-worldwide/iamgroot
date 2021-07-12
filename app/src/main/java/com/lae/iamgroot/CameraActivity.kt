@@ -91,8 +91,6 @@ class CameraActivity : AppCompatActivity() {
                     val savedUri = Uri.fromFile(photoFile)
                     processImage(savedUri)
 
-//                    Log.d(TAG, msg)
-
 //                    val intent = Intent()
 //                    intent.putExtra("imgUri", savedUri.toString())
 //                    setResult(Activity.RESULT_OK, intent)
