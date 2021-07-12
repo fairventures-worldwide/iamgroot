@@ -21,6 +21,7 @@ import androidx.lifecycle.MutableLiveData
 import kotlinx.android.synthetic.main.activity_camera.*
 import org.opencv.android.Utils
 import org.opencv.core.Mat
+import org.opencv.imgproc.Imgproc
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -188,9 +189,11 @@ class CameraActivity : AppCompatActivity() {
             val imageStream = contentResolver.openInputStream(uri)
             val selectedImage = BitmapFactory.decodeStream(imageStream)
             val bitmapImg = selectedImage.copy(Bitmap.Config.ARGB_8888, true)
+
             val src = Mat()
 
             Utils.bitmapToMat(bitmapImg, src)
+            Imgproc.cvtColor(src, src, Imgproc.COLOR_RGBA2BGR)
 
             val start = System.nanoTime()
             val diameter: Double = getTreeDiameter(src.nativeObjAddr)
